@@ -140,8 +140,6 @@ history
 
 
 
-
-
 ## 定时任务
 
 ```bash
@@ -170,14 +168,23 @@ crontab -e
 
 
 
-## 用户操作
+## 判断是否是 root
 
 ```bash
 #!/bin/bash
 
-# 判断是不是管理员操作
-if [[ "$(whoami)" != "root" ]]; then
+# 判断是不是管理员操作,sudo 运行的时候是 root
+if [ "$(whoami)" != "root" ]; then
     echo "please run this script as root !"
+    exit 1
+fi
+
+USER_ID=$(id -u)
+
+if [ "x${USER_ID}" = "x0" ]; then
+    echo "start install apps ....."
+else
+    echo "please exec as root"
     exit 1
 fi
 ```
@@ -209,7 +216,97 @@ EOF
 # 获取当前日期   2020-07-18 14:35:06
 NowTime=$(/bin/date +%Y-%m-%d' '%H:%M:%S)
 echo ${NowTime}
+
+# 返回时间 2020-08-05-10-28-29
+file_time() {
+    echo $(date +%Y-%m-%d-%H-%M-%S)
+}
+
+# 返回时间戳,1970 到现在
+file_timestamp() {
+    echo $(date +%s)
+}
 ```
 
 
+
+## 程序安装
+
+### yum
+
+`/etc/yum.conf` 配置文件
+
+` /etc/yum.repos.d/` 镜像源配置文件
+
+`   /var/cache/yum/` 镜像缓存位置
+
+yum 源中配置的 `$basearch`  和  `$releasever` 值是什么
+
+```bash
+# distroverpkg 对应 rpm 包的信息中可以看到
+cat /etc/yum.conf
+
+# 查看 distroverpkg 对应 rpm 包的信息 Version 对应 $releasever Architecture 对应 $basearch
+rpm -qi centos-release
+```
+
+
+
+`yum install` 默认安装某个包
+
+```bash
+# 查看一个包的描述信息及概要信息
+yum info nginx.
+
+# 查看 yum 中都有什么版本的包
+yum search --showduplicates nginx
+# 查看属于哪个 yum 源
+yum list --showduplicates nginx
+
+# 下载依赖包，不安装
+yum install --downloadonly --downloaddir=./test 1:nginx-1.8.1-1.el7.ngx.x86_64
+```
+
+
+
+
+
+### rpm
+
+```bash
+# 查找安装了关于 nginx 哪些 rpm 包
+rpm -qa | grep nginx
+
+# 查看安装的 rpm 包的概要信息
+rpm -qi nginx
+rpm -qi nginx-1.18.0-1.el7.ngx.x86_64
+
+# 查看 rpm 包安装哪些文件到哪些目录下
+rpm -ql nginx-1.18.0-1.el7.ngx.x86_64
+
+# 卸载安装的某个程序
+rpm -e 包名
+
+# 查询文件属于的安装程序
+rpm -qf 系统文件名 
+
+# 校验安装的包中的文件是否被修改
+rpm -V 包名
+
+# 升级
+rpm -Uvh 包全名
+
+# 解压 rpm 包到指定当前目录
+rpm2cpio xxx.rpm | cpio -div
+```
+
+
+
+### 镜像网站
+
+[阿里镜像站](https://developer.aliyun.com/mirror/)
+
+[华为镜像站](https://mirrors.huaweicloud.com/)
+
+[清华镜像站](https://mirrors.tuna.tsinghua.edu.cn/)
 
